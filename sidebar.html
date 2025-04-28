@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at center, #6A5ACD 40%, #483D8B 80%, #2F0047 100%);
+            color: #ffffff;
+            padding: 15px;
+            max-width: 270px;
+            line-height: 1.5;
+            box-shadow: 0 0 20px rgba(106, 90, 205, 0.8); /* Neon glow effect */
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 7px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 12px;
+            background-color: #fff;
+            transition: border-color 0.2s ease;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: #32CD32;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 8px;
+            background-color: #32CD32;
+            color: #ffffff;
+            border: 2px solid #32CD32;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #228B22;
+            color: #ffffff;
+            border-color: #228B22;
+        }
+
+        button:active {
+            background-color: #006400;
+            color: #ffffff;
+            border-color: #006400;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+            -webkit-appearance: none;
+            background: #ffffff;
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #32CD32;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #32CD32;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .slider-value {
+            font-size: 11px;
+            color: #ffffff;
+            text-align: center;
+        }
+
+        #input-cell, #input-column, #range-options, #auto-rows, #fixed-rows {
+            display: none;
+            margin-top: 10px;
+        }
+
+        #result-message {
+            font-size: 11px;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>AI Summarizer</h2>
+
+    <label>Header Rows to Skip:</label>
+    <input type="number" id="header-row" value="0" min="0">
+
+    <label>Prompt (use {{value}} for input):</label>
+    <input type="text" id="prompt" value="Summarize {{value}} in one sentence.">
+
+    <label>Input Type:</label>
+    <select id="input-type" onchange="toggleInputOptions()">
+        <option value="range">Row Range</option>
+        <option value="cell">Single Cell</option>
+        <option value="column">Entire Column</option>
+    </select>
+
+    <div id="input-cell">
+        <label>Input Cell (e.g., A2):</label>
+        <input type="text" id="input-cell-ref" value="A2">
+        <label>Result Cell (e.g., B2):</label>
+        <input type="text" id="result-cell-ref" value="B2">
+    </div>
+
+    <div id="input-column">
+        <label>Input Column (e.g., A):</label>
+        <input type="text" id="input-column-ref" value="A">
+        <label>Result Column (e.g., B):</label>
+        <input type="text" id="result-column" value="B">
+    </div>
+
+    <div id="range-options">
+        <label>Input Column (e.g., A):</label>
+        <input type="text" id="input-column-ref-range" value="A">
+        <label>Result Column (e.g., B):</label>
+        <input type="text" id="result-column-range" value="B">
+        <label>Row Selection:</label>
+        <select id="row-selection-type" onchange="toggleRowSelection()">
+            <option value="auto">Auto (Number of Rows)</option>
+            <option value="fixed">Fixed (Row Range)</option>
+        </select>
+        <div id="auto-rows">
+            <label>Number of Rows:</label>
+            <input type="number" id="num-rows" value="3" min="1">
+        </div>
+        <div id="fixed-rows">
+            <label>Start Row:</label>
+            <input type="number" id="start-row" value="2" min="1">
+            <label>End Row:</label>
+            <input type="number" id="end-row" value="4" min="1">
+        </div>
+    </div>
+
+    <label>Temperature:</label>
+    <div class="slider-container">
+        <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7"
+               oninput="updateSliderValue(this.value)">
+        <div class="slider-value" id="tempValue">0.7</div>
+    </div>
+
+    <label>Model:</label>
+    <select id="model">
+        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+    </select>
+
+    <button onclick="process()">Process</button>
+    <div id="result-message"></div>
+
+    <script>
+        function toggleInputOptions() {
+            const type = document.getElementById('input-type').value;
+            document.getElementById('input-cell').style.display = type === 'cell' ? 'block' : 'none';
+            document.getElementById('input-column').style.display = type === 'column' ? 'block' : 'none';
+            document.getElementById('range-options').style.display = type === 'range' ? 'block' : 'none';
+            toggleRowSelection();
+        }
+
+        function toggleRowSelection() {
+            const inputType = document.getElementById('input-type').value;
+            if (inputType !== 'range') return;
+            const type = document.getElementById('row-selection-type').value;
+            document.getElementById('auto-rows').style.display = type === 'auto' ? 'block' : 'none';
+            document.getElementById('fixed-rows').style.display = type === 'fixed' ? 'block' : 'none';
+        }
+
+        function process() {
+            const config = {
+                headerRow: parseInt(document.getElementById('header-row').value) || 0,
+                prompt: document.getElementById('prompt').value,
+                temperature: parseFloat(document.getElementById('temperature').value) || 0.7,
+                model: document.getElementById('model').value,
+                inputType: document.getElementById('input-type').value
+            };
+
+            if (config.inputType === 'cell') {
+                config.inputCell = document.getElementById('input-cell-ref').value;
+                config.resultCell = document.getElementById('result-cell-ref').value;
+            } else if (config.inputType === 'column') {
+                config.inputColumn = document.getElementById('input-column-ref').value;
+                config.resultColumn = document.getElementById('result-column').value;
+            } else if (config.inputType === 'range') {
+                config.inputColumn = document.getElementById('input-column-ref-range').value;
+                config.resultColumn = document.getElementById('result-column-range').value;
+                config.rowSelection = {
+                    type: document.getElementById('row-selection-type').value
+                };
+                if (config.rowSelection.type === 'auto') {
+                    config.rowSelection.numRows = parseInt(document.getElementById('num-rows').value) || 3;
+                } else {
+                    config.rowSelection.startRow = parseInt(document.getElementById('start-row').value) || 1;
+                    config.rowSelection.endRow = parseInt(document.getElementById('end-row').value) || 1;
+                }
+            }
+
+            document.getElementById('result-message').textContent = 'Processing...';
+            google.script.run
+                .withSuccessHandler(result => {
+                    document.getElementById('result-message').textContent = result.message;
+                    document.getElementById('result-message').style.color = result.status === 'success' ? '#32CD32' : '#ff4444';
+                })
+                .withFailureHandler(error => {
+                    document.getElementById('result-message').textContent = 'Error: ' + error.message;
+                    document.getElementById('result-message').style.color = '#ff4444';
+                })
+                .processRows(config);
+        }
+
+        function updateSliderValue(value) {
+            document.getElementById('tempValue').textContent = value;
+        }
+
+        window.onload = function() {
+            toggleInputOptions();
+            updateSliderValue(document.getElementById('temperature').value);
+        };
+    </script>
+</body>
+</html>
