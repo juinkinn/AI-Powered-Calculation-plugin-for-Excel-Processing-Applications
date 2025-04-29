@@ -13,7 +13,7 @@ This add-in integrates with Google Sheets, allowing you to process cell content 
 
 **Platforms support:** Google Sheet
 
-**Translation AI model used:** Gemini 2.0 Flash.
+**Translation AI model used:** Gemini 2.0 Flash, Gemini 1.5 Flash.
 
 ## 1. Development Overview
 
@@ -64,7 +64,7 @@ After opening the sidebar, you can see its UI:
 
 7. **Temperature (Creativity Level):** Controls randomness and creativity of the AI output.
 
-8. **Model Selection:** Choose which AI model you want to use.
+8. **Model Selection:** Choose which AI model you want to use. (Gemini 1.5/2.0 Flash)
 
 After selecting all your options, click `Process` button.
 
@@ -80,4 +80,4 @@ The GPT function in this plugin named `GPT_SUMMARIZE`. It receives 4 inputs from
 
 3. **Temperature:** Controls randomness and creativity of the AI output.
 
-4. **Model:** The AI model that you want to use.
+4. **Model:** The AI model that you want to use. (Gemini 1.5/2.0 Flash)
